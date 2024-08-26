@@ -1,0 +1,6 @@
+**/__pycache__
+**/.idea
+**/.ipynb_checkpoints
+.DS_Store
+/data_process/ini_file/
+/data_process/output/
