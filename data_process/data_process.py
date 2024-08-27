@@ -86,7 +86,8 @@ def process_multifaceted_info():
                                    'root cause': one_line[6], 'attack vector': one_line[7], 'impact': one_line[8],
                                    'remedy': one_line[10],
                                    'cvss score': one_line[13], 'severity': one_line[14], 'access': one_line[15],
-                                   'interaction': one_line[16], 'auth': one_line[17], 'attack complexity': one_line[18],
+                                   'interaction': one_line[16], 'authentication': one_line[17],
+                                   'attack complexity': one_line[18],
                                    'impact confidence': one_line[19], 'impact integer': one_line[20],
                                    'impact available': one_line[21]}
         if one_line[-1] != '':
