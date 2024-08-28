@@ -1,6 +1,8 @@
 from crewai import Crew
 from vulnerability_guardrail.backend.vul_guard_tasks import *
 from vulnerability_guardrail.backend.vul_guard_agents import *
+
+from langchain_openai import ChatOpenAI
 import os
 
 
@@ -13,7 +15,13 @@ class VulnerabilityGuardrail(Crew):
 
     @staticmethod
     def run(package: str, version: str) -> str:
-        vul_guard_agent = vulnerability_guardrail_agent()
+        vul_guard_agent = vulnerability_guardrail_agent(
+            llm=ChatOpenAI(
+                model_name="gpt-4o",
+                seed=42,
+                top_p=0.1,
+            )
+        )
         vul_guard_task = report_vulnerability_information(vul_guard_agent, package, version)
 
         crew = Crew(
@@ -22,7 +30,7 @@ class VulnerabilityGuardrail(Crew):
             verbose=True,
         )
         result = crew.kickoff()
-        return result
+        return str(result)
 
 
 if __name__ == '__main__':
