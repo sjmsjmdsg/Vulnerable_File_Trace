@@ -1,15 +1,16 @@
 from crewai_tools import tool
 from open_source_insights_api import os_insights
-from vulnerability_guardrail.DataLoader import *
+from data_process.DataLoader import *
+from vulnerability_guardrail.backend.web_request import *
 
 import tqdm
 
 # {cve_id: {'cvss_metrics': , 'description': , 'cwe_list': }...}
-cve_info: dict = DataLoader().load_pickle('/data_process/output/cve_dict.pkl')
+cve_info: dict = DataLoader().load_pickle('/output/cve_dict.pkl')
 # {cwe_id: {'cwe': , 'description': , 'description_extension': }...}
-cwe_info: dict = DataLoader().load_pickle('/data_process/output/cwe_dict.pkl')
+cwe_info: dict = DataLoader().load_pickle('/output/cwe_dict.pkl')
 # {cve_id: {key: value, ...}, ...}
-multifaceted_info: dict = DataLoader().load_pickle('/data_process/output/multifaceted_dict.pkl')
+multifaceted_info: dict = DataLoader().load_pickle('/output/multifaceted_dict.pkl')
 
 
 def fetch_vulnerability_information(osi, package_name, version):
@@ -25,17 +26,32 @@ def fetch_vulnerability_information(osi, package_name, version):
     cve_info_collection, cwe_info_collection, multifaceted_info_collection = [], [], []
 
     if pkg.get('advisoryKeys'):
+        cves = set()
         for one_adv in pkg['advisoryKeys']:
             # Fetch CVE info from advisory
-            vuls = osi.GetAdvisory(one_adv['id'])
-            if vuls.get('aliases'):
-                cves = [one_vul for one_vul in vuls['aliases'] if one_vul[:4] == 'CVE-']
-                cve_info_collection += [{**cve_info[one_cve], 'cve_id': one_cve} for one_cve in cves if
-                                        cve_info.get(one_cve)]
-                cwe_info_collection += [[cwe_info[one_cwe]] for one_info in cve_info_collection
-                                        for one_cwe in one_info['cwe_list'] if cwe_info.get(one_cwe)]
-                multifaceted_info_collection += [multifaceted_info[one_cve] for one_cve in cves if
-                                                 multifaceted_info.get(one_cve)]
+            if one_adv['id'][:4] == 'CVE-':
+                cves.add(one_adv['id'])
+            elif one_adv['id'][:5] == 'GHSA-':
+                vuls = get_vulnerabilities_osv(one_adv['id'])
+                if vuls and vuls.get('references'):
+                    cves = cves.union(set(one_vul['url'].split('/')[-1] for one_vul in vuls['references']
+                                          if one_vul['type'] == 'ADVISORY' and one_vul['url'].split('/')[-1][
+                                                                               :4] == 'CVE-'))
+            elif one_adv['id'][:4] == 'PSF-':
+                vuls = get_vulnerabilities_osv(one_adv['id'])
+                if vuls and vuls.get('aliases'):
+                    cves = cves.union(set(one_vul for one_vul in vuls['aliases'] if one_vul[:4] == 'CVE-'))
+            elif one_adv['id'][:6] == 'PYSEC-':
+                vuls = get_vulnerabilities_osv(one_adv['id'])
+                if vuls and vuls.get('related'):
+                    cves = cves.union(set(one_vul for one_vul in vuls['related'] if one_vul[:4] == 'CVE-'))
+
+        cve_info_collection += [{**cve_info[one_cve], 'cve_id': one_cve} for one_cve in cves if
+                                cve_info.get(one_cve)]
+        cwe_info_collection += [[cwe_info[one_cwe]] for one_info in cve_info_collection
+                                for one_cwe in one_info['cwe_list'] if cwe_info.get(one_cwe)]
+        multifaceted_info_collection += [multifaceted_info[one_cve] for one_cve in cves if
+                                         multifaceted_info.get(one_cve)]
 
     return cve_info_collection, cwe_info_collection, multifaceted_info_collection
 
@@ -50,8 +66,8 @@ def fetch_vulnerability_information_including_dependency(package_name: str, vers
     :return: CVE information and CWE information needed in the report.
     """
     osi = os_insights.query()
-    cve_info_collection, cwe_info_collection, multifaceted_info_collection = (
-        fetch_vulnerability_information(osi, package_name, version))
+    cve_info_collection, cwe_info_collection, multifaceted_info_collection = \
+        fetch_vulnerability_information(osi, package_name, version)
 
     if len(cve_info_collection) > 0:
         return_info = (f"For {package_name} {version}, all fetched CVE information: {cve_info_collection}, "
