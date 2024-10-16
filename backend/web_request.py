@@ -1,11 +1,11 @@
 import requests
 
 
-def get_vulnerabilities_osv(vul_id):
+def get_osv_info(vul_id):
     """
-    Get vulnerability info from OSV
+    Get software info from OSV
     :param vul_id: vulnerability id
-    :return: json of OVS vul info
+    :return: json of OSV info
     """
     url = f"https://api.osv.dev/v1/vulns/{vul_id}"
     response = requests.get(url)

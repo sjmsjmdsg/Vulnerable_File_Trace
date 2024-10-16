@@ -32,17 +32,17 @@ def fetch_vulnerability_information(osi, package_name, version):
             if one_adv['id'][:4] == 'CVE-':
                 cves.add(one_adv['id'])
             elif one_adv['id'][:5] == 'GHSA-':
-                vuls = get_vulnerabilities_osv(one_adv['id'])
+                vuls = get_osv_info(one_adv['id'])
                 if vuls and vuls.get('references'):
                     cves = cves.union(set(one_vul['url'].split('/')[-1] for one_vul in vuls['references']
                                           if one_vul['type'] == 'ADVISORY' and one_vul['url'].split('/')[-1][
                                                                                :4] == 'CVE-'))
             elif one_adv['id'][:4] == 'PSF-':
-                vuls = get_vulnerabilities_osv(one_adv['id'])
+                vuls = get_osv_info(one_adv['id'])
                 if vuls and vuls.get('aliases'):
                     cves = cves.union(set(one_vul for one_vul in vuls['aliases'] if one_vul[:4] == 'CVE-'))
             elif one_adv['id'][:6] == 'PYSEC-':
-                vuls = get_vulnerabilities_osv(one_adv['id'])
+                vuls = get_osv_info(one_adv['id'])
                 if vuls and vuls.get('related'):
                     cves = cves.union(set(one_vul for one_vul in vuls['related'] if one_vul[:4] == 'CVE-'))
 

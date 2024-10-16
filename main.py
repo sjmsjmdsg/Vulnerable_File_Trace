@@ -13,6 +13,7 @@ os.environ["OPENAI_API_KEY"] = key
 
 ORANGE = "\033[38;5;208m"
 GREEN = "\033[92m"
+PINK = "\033[38;2;255;105;180m"
 RESET = "\033[0m"
 
 
@@ -27,7 +28,7 @@ class VulnerabilityGuardrail:
                 top_p=0.1,
             )
         )
-        vul_guard_task = report_vulnerability_information(vul_guard_agent)
+        vul_guard_task = report_quality_information(vul_guard_agent)
 
         crew_inputs = []
         for (package, version) in package_version_list:
@@ -38,9 +39,6 @@ class VulnerabilityGuardrail:
             tasks=[vul_guard_task],
             verbose=False,
         )
-        # result = vul_guard_crew.kickoff_for_each(inputs=crew_inputs)
-        # result_list = str([str(one_result) for one_result in result])
-        # print('result1:', result_list)
 
         result_list = []
         async_results = asyncio.run(vul_guard_crew.kickoff_for_each_async(inputs=crew_inputs))
@@ -54,7 +52,7 @@ class VulnerabilityGuardrail:
                 top_p=0.1,
             )
         )
-        vul_report_task = combine_vulnerability_information(vul_report_agent)
+        vul_report_task = combine_quality_information(vul_report_agent)
         vul_report_crew = Crew(
             agents=[vul_report_agent],
             tasks=[vul_report_task],
@@ -68,7 +66,8 @@ def main():
     requirement = DataLoader().load_txt('/input/requirement.txt')
     requirement = [(one_line[0].split('==')[0].lower(), one_line[0].split('==')[1].lower())for one_line in requirement]
     result = VulnerabilityGuardrail.run(requirement)
-    print(result.replace("<ORANGE>", ORANGE).replace("<GREEN>", GREEN).replace("<END>", RESET))
+    print(result.replace("<ORANGE>", ORANGE).replace("<GREEN>", GREEN).replace("<PINK>", PINK)
+          .replace("<END>", RESET))
 
 
 if __name__ == '__main__':
