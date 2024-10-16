@@ -1,4 +1,4 @@
-from vulnerability_guardrail.data_process.DataLoader import *
+from code_quality_agent.data_process.DataLoader import *
 import re
 import tqdm
 

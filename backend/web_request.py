@@ -1,16 +1,16 @@
 import requests
 
 
-def get_osv_info(vul_id):
+def get_osv_info(adv_id):
     """
-    Get software info from OSV
-    :param vul_id: vulnerability id
-    :return: json of OSV info
+    Get software advisory info from OSV
+    :param adv_id: advisory entry id
+    :return: json of OSV advisory info
     """
-    url = f"https://api.osv.dev/v1/vulns/{vul_id}"
+    url = f"https://api.osv.dev/v1/vulns/{adv_id}"
     response = requests.get(url)
     if response.status_code == 200:
-        vulnerabilities = response.json()
-        return vulnerabilities
+        adv_info = response.json()
+        return adv_info
     else:
         return None
